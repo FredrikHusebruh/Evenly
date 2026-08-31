@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm create *)",
+      "Bash(docker info *)",
+      "Bash(npm install *)",
+      "Bash(npx supabase *)",
+      "Bash(curl -s -X POST https://zxxpkqfjvtrjeynubeto.supabase.co/auth/v1/signup -H 'apikey: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp4eHBrcWZqdnRyamV5bnViZXRvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODgxNzg3OTksImV4cCI6MjEwMzc1NDc5OX0.Wkpdyl5vvuTXXR5UW6FOJ4kU3nFqI09ORqMP4Sffm38' -H 'Content-Type: application/json' -d '{\"email\":\"fredericohusebo+evenlytest1@gmail.com\",\"password\":\"Test-Password-1234!\"}')",
+      "Bash(curl -s http://127.0.0.1:8000/api/v1/health)",
+      "Bash(PYTHONIOENCODING=utf-8 PYTHONUTF8=1 uv run fastapi run app/main.py --port 8010)",
+      "Bash(curl -s http://127.0.0.1:8010/api/v1/health)"
+    ]
+  }
+}
