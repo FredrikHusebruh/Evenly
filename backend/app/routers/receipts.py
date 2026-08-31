@@ -75,3 +75,17 @@ async def delete_receipt(
     db: AsyncClient = Depends(get_request_supabase_client),
 ) -> None:
     await receipts_service.delete_receipt(db, receipt_id)
+
+
+@router.post(
+    "/receipts/{receipt_id}/retry-ocr",
+    response_model=ReceiptStatusOut,
+    summary="Re-queue OCR processing for a receipt that previously failed",
+)
+async def retry_ocr(
+    receipt_id: UUID,
+    background_tasks: BackgroundTasks,
+    user: CurrentUser = Depends(get_current_user),
+    db: AsyncClient = Depends(get_request_supabase_client),
+) -> ReceiptStatusOut:
+    return await receipts_service.retry_ocr(db, background_tasks, receipt_id)

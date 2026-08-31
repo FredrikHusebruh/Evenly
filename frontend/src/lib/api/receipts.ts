@@ -46,3 +46,9 @@ export async function updateReceipt(
 export async function deleteReceipt(receiptId: string) {
   await api.DELETE('/api/v1/receipts/{receipt_id}', { params: { path: { receipt_id: receiptId } } })
 }
+
+export async function retryOcr(receiptId: string) {
+  return unwrap(
+    await api.POST('/api/v1/receipts/{receipt_id}/retry-ocr', { params: { path: { receipt_id: receiptId } } }),
+  )
+}

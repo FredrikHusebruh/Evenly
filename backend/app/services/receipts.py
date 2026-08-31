@@ -10,7 +10,7 @@ from app.clients.supabase import unwrap_maybe_single
 from app.errors import NotFoundError
 from app.schemas.line_item import LineItemOut
 from app.schemas.receipt import ReceiptCreate, ReceiptDetail, ReceiptOut, ReceiptStatusOut, ReceiptUpdate
-from app.services import ocr_stub
+from app.services.ocr import pipeline as ocr_pipeline
 from app.services.split import compute_mismatch
 
 logger = logging.getLogger("app")
@@ -29,7 +29,7 @@ async def create_receipt(
         .execute()
     )
     receipt = res.data[0]
-    background_tasks.add_task(ocr_stub.mark_succeeded_stub, receipt["id"])
+    background_tasks.add_task(ocr_pipeline.process_receipt_ocr, receipt["id"])
     return ReceiptOut.model_validate(receipt)
 
 
@@ -111,3 +111,21 @@ async def delete_receipt(db: AsyncClient, receipt_id: UUID) -> None:
             await db.storage.from_("receipts").remove([image_path])
         except Exception:
             logger.exception("Failed to delete storage object %s for receipt %s", image_path, receipt_id)
+
+
+async def retry_ocr(db: AsyncClient, background_tasks: BackgroundTasks, receipt_id: UUID) -> ReceiptStatusOut:
+    """Re-queue OCR for a receipt stuck in 'failed'. The conditional update
+    (only transitions rows currently 'failed') makes the state change
+    atomic at the DB level, so a stray double-click can't race a second
+    background task against one still in flight."""
+    res = (
+        await db.table("receipts")
+        .update({"ocr_status": "pending", "ocr_error": None})
+        .eq("id", str(receipt_id))
+        .eq("ocr_status", "failed")
+        .execute()
+    )
+    if not res.data:
+        raise NotFoundError("Receipt not found or not currently failed")
+    background_tasks.add_task(ocr_pipeline.process_receipt_ocr, res.data[0]["id"])
+    return ReceiptStatusOut.model_validate(res.data[0])

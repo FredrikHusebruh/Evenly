@@ -18,6 +18,7 @@ export function ReceiptReviewPage() {
   const { group } = useGroupDetail(groupId!)
   const { split, reload: reloadSplit } = useSplit(receiptId!)
   const [adding, setAdding] = useState(false)
+  const [retrying, setRetrying] = useState(false)
 
   async function refreshAfterMutation() {
     await Promise.all([reload(), reloadSplit()])
@@ -36,6 +37,16 @@ export function ReceiptReviewPage() {
   async function handleItemDelete(itemId: string) {
     await lineItemsApi.deleteLineItem(itemId)
     refreshAfterMutation()
+  }
+
+  async function handleRetryOcr() {
+    setRetrying(true)
+    try {
+      await receiptsApi.retryOcr(receiptId!)
+      await reload()
+    } finally {
+      setRetrying(false)
+    }
   }
 
   async function handleAddItem() {
@@ -70,7 +81,17 @@ export function ReceiptReviewPage() {
       <h1 className="text-xl font-semibold tracking-tight">Review receipt</h1>
 
       {receipt.ocr_status === 'failed' && (
-        <p className="text-sm text-owed">{receipt.ocr_error ?? 'Processing failed. Add items manually below.'}</p>
+        <div className="flex items-center gap-3">
+          <p className="text-sm text-owed">{receipt.ocr_error ?? 'Processing failed. Add items manually below.'}</p>
+          <button
+            type="button"
+            onClick={handleRetryOcr}
+            disabled={retrying}
+            className="text-sm text-accent hover:text-accent-hover disabled:opacity-60"
+          >
+            {retrying ? 'Retrying…' : 'Retry'}
+          </button>
+        </div>
       )}
 
       <ReceiptHeaderFields receipt={receipt} onUpdate={handleHeaderUpdate} />
