@@ -7,13 +7,26 @@ from fastapi import BackgroundTasks
 from supabase import AsyncClient
 
 from app.clients.supabase import unwrap_maybe_single
-from app.errors import NotFoundError
+from app.errors import ForbiddenError, NotFoundError
 from app.schemas.line_item import LineItemOut
 from app.schemas.receipt import ReceiptCreate, ReceiptDetail, ReceiptOut, ReceiptStatusOut, ReceiptUpdate
 from app.services.ocr import pipeline as ocr_pipeline
 from app.services.split import compute_mismatch
 
 logger = logging.getLogger("app")
+
+
+def image_path_belongs_to_group(image_path: str, group_id: UUID) -> bool:
+    """True iff image_path's leading storage-path segment is this group's id.
+
+    Storage RLS restricts reads/writes under <group_id>/... to that group's
+    members, but the OCR pipeline downloads image_path with the service-role
+    client, which bypasses that RLS entirely — so a client-supplied
+    image_path pointing at a path belonging to a *different* group (one the
+    caller has no current access to) must be rejected here explicitly,
+    before it's ever trusted by that privileged download.
+    """
+    return image_path.split("/", 1)[0] == str(group_id)
 
 
 async def create_receipt(
@@ -23,6 +36,9 @@ async def create_receipt(
     uploaded_by: UUID,
     body: ReceiptCreate,
 ) -> ReceiptOut:
+    if not image_path_belongs_to_group(body.image_path, group_id):
+        raise ForbiddenError("Image path must belong to this group")
+
     res = (
         await db.table("receipts")
         .insert({"group_id": str(group_id), "uploaded_by": str(uploaded_by), "image_path": body.image_path})
