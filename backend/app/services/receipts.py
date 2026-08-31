@@ -1,0 +1,113 @@
+import logging
+from datetime import date
+from decimal import Decimal
+from uuid import UUID
+
+from fastapi import BackgroundTasks
+from supabase import AsyncClient
+
+from app.clients.supabase import unwrap_maybe_single
+from app.errors import NotFoundError
+from app.schemas.line_item import LineItemOut
+from app.schemas.receipt import ReceiptCreate, ReceiptDetail, ReceiptOut, ReceiptStatusOut, ReceiptUpdate
+from app.services import ocr_stub
+from app.services.split import compute_mismatch
+
+logger = logging.getLogger("app")
+
+
+async def create_receipt(
+    db: AsyncClient,
+    background_tasks: BackgroundTasks,
+    group_id: UUID,
+    uploaded_by: UUID,
+    body: ReceiptCreate,
+) -> ReceiptOut:
+    res = (
+        await db.table("receipts")
+        .insert({"group_id": str(group_id), "uploaded_by": str(uploaded_by), "image_path": body.image_path})
+        .execute()
+    )
+    receipt = res.data[0]
+    background_tasks.add_task(ocr_stub.mark_succeeded_stub, receipt["id"])
+    return ReceiptOut.model_validate(receipt)
+
+
+async def list_receipts(
+    db: AsyncClient,
+    group_id: UUID,
+    date_from: date | None,
+    date_to: date | None,
+    store: str | None,
+    category_id: UUID | None,
+) -> list[ReceiptOut]:
+    query = db.table("receipts").select("*").eq("group_id", str(group_id))
+    if date_from is not None:
+        query = query.gte("receipt_date", date_from.isoformat())
+    if date_to is not None:
+        query = query.lte("receipt_date", date_to.isoformat())
+    if store is not None:
+        query = query.ilike("merchant", f"%{store}%")
+    if category_id is not None:
+        query = query.eq("category_id", str(category_id))
+    res = await query.order("receipt_date", desc=True).execute()
+    return [ReceiptOut.model_validate(r) for r in res.data]
+
+
+async def get_receipt_detail(db: AsyncClient, receipt_id: UUID) -> ReceiptDetail:
+    receipt_res = await db.table("receipts").select("*").eq("id", str(receipt_id)).maybe_single().execute()
+    receipt = unwrap_maybe_single(receipt_res)
+    if not receipt:
+        raise NotFoundError("Receipt not found")
+
+    items_res = (
+        await db.table("line_items").select("*").eq("receipt_id", str(receipt_id)).order("created_at").execute()
+    )
+    line_items = [LineItemOut.model_validate(i) for i in items_res.data]
+    items_total = sum((li.total_price for li in line_items), Decimal(0))
+
+    total_amount = receipt.get("total_amount")
+    mismatch = compute_mismatch(items_total, Decimal(str(total_amount)) if total_amount is not None else None)
+
+    return ReceiptDetail(**receipt, line_items=line_items, items_total=items_total, mismatch=mismatch)
+
+
+async def get_receipt_status(db: AsyncClient, receipt_id: UUID) -> ReceiptStatusOut:
+    res = await db.table("receipts").select("ocr_status, ocr_error").eq("id", str(receipt_id)).maybe_single().execute()
+    data = unwrap_maybe_single(res)
+    if not data:
+        raise NotFoundError("Receipt not found")
+    return ReceiptStatusOut.model_validate(data)
+
+
+async def update_receipt(db: AsyncClient, receipt_id: UUID, body: ReceiptUpdate) -> ReceiptOut:
+    patch = body.model_dump(exclude_unset=True, mode="json")
+    if not patch:
+        res = await db.table("receipts").select("*").eq("id", str(receipt_id)).maybe_single().execute()
+        data = unwrap_maybe_single(res)
+        if not data:
+            raise NotFoundError("Receipt not found")
+        return ReceiptOut.model_validate(data)
+
+    res = await db.table("receipts").update(patch).eq("id", str(receipt_id)).execute()
+    if not res.data:
+        raise NotFoundError("Receipt not found")
+    return ReceiptOut.model_validate(res.data[0])
+
+
+async def delete_receipt(db: AsyncClient, receipt_id: UUID) -> None:
+    receipt_res = await db.table("receipts").select("image_path").eq("id", str(receipt_id)).maybe_single().execute()
+    receipt = unwrap_maybe_single(receipt_res)
+    if not receipt:
+        raise NotFoundError("Receipt not found")
+    image_path = receipt.get("image_path")
+
+    res = await db.table("receipts").delete().eq("id", str(receipt_id)).execute()
+    if not res.data:
+        raise NotFoundError("Receipt not found")
+
+    if image_path:
+        try:
+            await db.storage.from_("receipts").remove([image_path])
+        except Exception:
+            logger.exception("Failed to delete storage object %s for receipt %s", image_path, receipt_id)
