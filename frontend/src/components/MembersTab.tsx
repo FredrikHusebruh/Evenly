@@ -1,7 +1,11 @@
 import { useEffect, useState } from 'react'
+import { Copy, Link2 } from 'lucide-react'
 import * as groupsApi from '../lib/api/groups'
 import * as invitesApi from '../lib/api/invites'
 import { displayName } from '../lib/members'
+import { useToast } from '../toast/useToast'
+import { IconButton } from './IconButton'
+import { EmptyState } from './EmptyState'
 import type { components } from '../lib/api/schema'
 
 type GroupDetail = components['schemas']['GroupDetail']
@@ -20,6 +24,7 @@ export function MembersTab({
 }) {
   const [invites, setInvites] = useState<Invite[]>([])
   const [creating, setCreating] = useState(false)
+  const { showToast } = useToast()
 
   useEffect(() => {
     if (!isOwner) return
@@ -31,6 +36,9 @@ export function MembersTab({
     try {
       const invite = await invitesApi.createInvite(group.id)
       setInvites((prev) => [invite, ...prev])
+      showToast('Invite created')
+    } catch {
+      showToast('Failed to create invite', 'error')
     } finally {
       setCreating(false)
     }
@@ -44,6 +52,16 @@ export function MembersTab({
   async function handleRemove(userId: string) {
     await groupsApi.removeMember(group.id, userId)
     onChange()
+    showToast('Member removed')
+  }
+
+  async function handleCopy(code: string) {
+    try {
+      await navigator.clipboard.writeText(code)
+      showToast('Invite code copied')
+    } catch {
+      showToast('Failed to copy code', 'error')
+    }
   }
 
   return (
@@ -81,17 +99,27 @@ export function MembersTab({
               {creating ? 'Creating…' : 'New invite'}
             </button>
           </div>
-          {invites.length === 0 && <p className="text-sm text-muted">No active invites.</p>}
-          <ul className="flex flex-col divide-y divide-border">
-            {invites.map((invite) => (
-              <li key={invite.id} className="flex items-center justify-between py-2 text-sm">
-                <span className="tabular-nums">{invite.code}</span>
-                <button type="button" onClick={() => handleRevoke(invite.id)} className="text-muted hover:text-owed">
-                  Revoke
-                </button>
-              </li>
-            ))}
-          </ul>
+          {invites.length === 0 ? (
+            <EmptyState icon={Link2} title="No active invites." compact />
+          ) : (
+            <ul className="flex flex-col divide-y divide-border">
+              {invites.map((invite) => (
+                <li key={invite.id} className="flex items-center justify-between py-2 text-sm">
+                  <span className="flex items-center gap-1">
+                    <span className="tabular-nums">{invite.code}</span>
+                    <IconButton icon={Copy} label="Copy invite code" onClick={() => handleCopy(invite.code)} />
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => handleRevoke(invite.id)}
+                    className="text-muted hover:text-owed"
+                  >
+                    Revoke
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
       )}
     </div>

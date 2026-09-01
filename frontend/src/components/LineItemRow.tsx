@@ -1,7 +1,9 @@
 import { useState } from 'react'
+import { X } from 'lucide-react'
 import type { LineItemPatch, LineItemStatus } from '../lib/api/lineItems'
 import type { components } from '../lib/api/schema'
 import { displayName } from '../lib/members'
+import { IconButton } from './IconButton'
 
 type LineItem = components['schemas']['LineItemOut']
 type GroupMember = components['schemas']['GroupMemberOut']
@@ -68,9 +70,7 @@ export function LineItemRow({
             item.status === 'excluded' ? 'text-muted line-through' : ''
           }`}
         />
-        <button type="button" onClick={onDelete} className="shrink-0 text-xs text-muted hover:text-owed">
-          ✕
-        </button>
+        <IconButton icon={X} label="Remove item" variant="danger" size="sm" onClick={onDelete} />
       </div>
 
       <div className="flex items-center gap-2 text-xs">

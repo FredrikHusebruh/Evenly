@@ -1,5 +1,8 @@
+import { CheckCircle2 } from 'lucide-react'
 import { useSettleUp } from '../hooks/useSettleUp'
 import { Money } from './Money'
+import { Skeleton } from './Skeleton'
+import { EmptyState } from './EmptyState'
 import { displayName, resolveMember } from '../lib/members'
 import type { components } from '../lib/api/schema'
 
@@ -16,10 +19,21 @@ export function SettleUpTab({
 }) {
   const { settleUp, loading, error } = useSettleUp(groupId)
 
-  if (loading) return <p className="text-sm text-muted">Loading…</p>
+  if (loading) {
+    return (
+      <div className="flex flex-col divide-y divide-border border-y border-border">
+        {[0, 1].map((i) => (
+          <div key={i} className="flex items-center justify-between px-1 py-3">
+            <Skeleton className="h-4 w-40" />
+            <Skeleton className="h-4 w-16" />
+          </div>
+        ))}
+      </div>
+    )
+  }
   if (error) return <p className="text-sm text-owed">{error}</p>
   if (!settleUp || settleUp.settlements.length === 0) {
-    return <p className="text-sm text-muted">Everyone's settled up.</p>
+    return <EmptyState icon={CheckCircle2} title="Everyone's settled up." tone="positive" />
   }
 
   return (

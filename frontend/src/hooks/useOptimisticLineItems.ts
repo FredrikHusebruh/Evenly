@@ -38,31 +38,35 @@ export function useOptimisticLineItems(serverItems: LineItem[]) {
     )
   }, [serverItems])
 
-  async function updateItem(itemId: string, patch: LineItemPatch) {
+  async function updateItem(itemId: string, patch: LineItemPatch): Promise<boolean> {
     const previous = items
     pendingUpdateIds.current.add(itemId)
     setItems((current) => current.map((it) => (it.id === itemId ? applyPatch(it, patch) : it)))
     setError(null)
     try {
       await lineItemsApi.updateLineItem(itemId, patch)
+      return true
     } catch (err) {
       setItems(previous)
       setError(err instanceof Error ? err.message : 'Failed to save change')
+      return false
     } finally {
       pendingUpdateIds.current.delete(itemId)
     }
   }
 
-  async function deleteItem(itemId: string) {
+  async function deleteItem(itemId: string): Promise<boolean> {
     const previous = items
     pendingDeleteIds.current.add(itemId)
     setItems((current) => current.filter((it) => it.id !== itemId))
     setError(null)
     try {
       await lineItemsApi.deleteLineItem(itemId)
+      return true
     } catch (err) {
       setItems(previous)
       setError(err instanceof Error ? err.message : 'Failed to remove item')
+      return false
     } finally {
       pendingDeleteIds.current.delete(itemId)
     }

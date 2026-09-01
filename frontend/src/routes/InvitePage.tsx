@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router'
 import * as invitesApi from '../lib/api/invites'
 import type { components } from '../lib/api/schema'
 import { useSession } from '../auth/useSession'
+import { Skeleton } from '../components/Skeleton'
 
 type Preview = components['schemas']['InvitePreview']
 
@@ -41,7 +42,13 @@ export function InvitePage() {
   return (
     <div className="mx-auto flex min-h-screen max-w-sm flex-col justify-center px-4 text-center">
       {error && <p className="text-sm text-owed">{error}</p>}
-      {!error && !preview && <p className="text-sm text-muted">Loading invite…</p>}
+      {!error && !preview && (
+        <div className="flex flex-col items-center gap-3">
+          <Skeleton className="h-7 w-48" />
+          <Skeleton className="h-4 w-56" />
+          <Skeleton className="h-11 w-full rounded-md" />
+        </div>
+      )}
       {preview && (
         <>
           <h1 className="mb-2 text-xl font-semibold tracking-tight">Join {preview.group_name}</h1>

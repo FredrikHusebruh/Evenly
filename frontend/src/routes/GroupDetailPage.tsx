@@ -6,6 +6,7 @@ import { ReceiptHistoryTable } from '../components/ReceiptHistoryTable'
 import { MembersTab } from '../components/MembersTab'
 import { SettleUpTab } from '../components/SettleUpTab'
 import { AnalyticsTab } from '../components/AnalyticsTab'
+import { Skeleton } from '../components/Skeleton'
 import { useSession } from '../auth/useSession'
 
 type Tab = 'receipts' | 'members' | 'settle' | 'analytics'
@@ -18,7 +19,22 @@ export function GroupDetailPage() {
   const [tab, setTab] = useState<Tab>('receipts')
   const navigate = useNavigate()
 
-  if (loading) return <p className="text-sm text-muted">Loading…</p>
+  if (loading) {
+    return (
+      <div className="flex flex-col gap-6">
+        <div className="flex items-center justify-between">
+          <Skeleton className="h-7 w-48" />
+          <Skeleton className="h-9 w-32 rounded-md" />
+        </div>
+        <div className="flex gap-6 border-b border-border pb-2">
+          {[0, 1, 2, 3].map((i) => (
+            <Skeleton key={i} className="h-4 w-16" />
+          ))}
+        </div>
+        <Skeleton className="h-40 w-full rounded-md" />
+      </div>
+    )
+  }
   if (error || !group) return <p className="text-sm text-owed">{error ?? 'Group not found'}</p>
 
   const isOwner = group.members.find((m) => m.user_id === session?.user.id)?.role === 'owner'
@@ -36,7 +52,7 @@ export function GroupDetailPage() {
         </button>
       </div>
 
-      <nav className="flex gap-6 border-b border-border text-sm">
+      <nav className="flex gap-6 overflow-x-auto border-b border-border text-sm">
         {(
           [
             ['receipts', 'Receipts'],
@@ -49,7 +65,7 @@ export function GroupDetailPage() {
             key={key}
             type="button"
             onClick={() => setTab(key)}
-            className={`-mb-px border-b-2 pb-2 ${
+            className={`-mb-px shrink-0 border-b-2 pb-2 ${
               tab === key ? 'border-accent text-ink' : 'border-transparent text-muted hover:text-ink'
             }`}
           >
@@ -58,19 +74,18 @@ export function GroupDetailPage() {
         ))}
       </nav>
 
-      {tab === 'receipts' &&
-        (receiptsLoading ? (
-          <p className="text-sm text-muted">Loading…</p>
-        ) : (
-          <ReceiptHistoryTable groupId={groupId!} receipts={receipts} />
-        ))}
-      {tab === 'members' && (
-        <MembersTab group={group} isOwner={isOwner} currentUserId={session?.user.id} onChange={reload} />
-      )}
-      {tab === 'settle' && (
-        <SettleUpTab groupId={groupId!} members={group.members} currentUserId={session?.user.id} />
-      )}
-      {tab === 'analytics' && <AnalyticsTab groupId={groupId!} />}
+      <div key={tab} className="animate-fade-in">
+        {tab === 'receipts' && (
+          <ReceiptHistoryTable groupId={groupId!} receipts={receipts} loading={receiptsLoading} />
+        )}
+        {tab === 'members' && (
+          <MembersTab group={group} isOwner={isOwner} currentUserId={session?.user.id} onChange={reload} />
+        )}
+        {tab === 'settle' && (
+          <SettleUpTab groupId={groupId!} members={group.members} currentUserId={session?.user.id} />
+        )}
+        {tab === 'analytics' && <AnalyticsTab groupId={groupId!} />}
+      </div>
     </div>
   )
 }

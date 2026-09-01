@@ -1,5 +1,6 @@
 import { useRef } from 'react'
 import { useParams } from 'react-router'
+import { Camera } from 'lucide-react'
 import { useReceiptUpload } from '../hooks/useReceiptUpload'
 
 export function ReceiptCapturePage() {
@@ -28,8 +29,9 @@ export function ReceiptCapturePage() {
         type="button"
         onClick={() => inputRef.current?.click()}
         disabled={uploading}
-        className="w-full rounded-md bg-accent px-4 py-3 text-sm font-medium text-white transition-colors hover:bg-accent-hover disabled:opacity-60"
+        className="flex w-full items-center justify-center gap-2 rounded-md bg-accent px-4 py-3 text-sm font-medium text-white transition-colors hover:bg-accent-hover disabled:opacity-60"
       >
+        <Camera className="h-4 w-4" strokeWidth={1.75} />
         {uploading ? 'Uploading…' : 'Take photo / choose image'}
       </button>
 
