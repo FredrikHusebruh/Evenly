@@ -5,9 +5,10 @@ import { useReceipts } from '../hooks/useReceipts'
 import { ReceiptHistoryTable } from '../components/ReceiptHistoryTable'
 import { MembersTab } from '../components/MembersTab'
 import { SettleUpTab } from '../components/SettleUpTab'
+import { AnalyticsTab } from '../components/AnalyticsTab'
 import { useSession } from '../auth/useSession'
 
-type Tab = 'receipts' | 'members' | 'settle'
+type Tab = 'receipts' | 'members' | 'settle' | 'analytics'
 
 export function GroupDetailPage() {
   const { groupId } = useParams<{ groupId: string }>()
@@ -41,6 +42,7 @@ export function GroupDetailPage() {
             ['receipts', 'Receipts'],
             ['members', 'Members'],
             ['settle', 'Settle up'],
+            ['analytics', 'Analytics'],
           ] as const
         ).map(([key, label]) => (
           <button
@@ -68,6 +70,7 @@ export function GroupDetailPage() {
       {tab === 'settle' && (
         <SettleUpTab groupId={groupId!} members={group.members} currentUserId={session?.user.id} />
       )}
+      {tab === 'analytics' && <AnalyticsTab groupId={groupId!} />}
     </div>
   )
 }

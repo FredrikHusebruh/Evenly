@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import get_settings
 from app.errors import AppError, app_error_handler, unhandled_exception_handler
-from app.routers import categories, groups, health, invites, line_items, me, receipts, split
+from app.routers import analytics, categories, groups, health, invites, line_items, me, receipts, split
 
 app = FastAPI(title="Receipt Splitter API")
 
@@ -27,3 +27,4 @@ app.include_router(categories.router)
 app.include_router(receipts.router)
 app.include_router(line_items.router)
 app.include_router(split.router)
+app.include_router(analytics.router)

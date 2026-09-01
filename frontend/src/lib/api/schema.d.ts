@@ -356,10 +356,38 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/groups/{group_id}/analytics": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Spending breakdown, trends, and owed history for a group */
+        get: operations["get_group_analytics_api_v1_groups__group_id__analytics_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** CategoryBreakdown */
+        CategoryBreakdown: {
+            /** Category Id */
+            category_id: string | null;
+            /** Category Name */
+            category_name: string;
+            /** Total */
+            total: string;
+            /** Receipt Count */
+            receipt_count: number;
+        };
         /** CategoryCreate */
         CategoryCreate: {
             /** Name */
@@ -389,6 +417,25 @@ export interface components {
         CategoryUpdate: {
             /** Name */
             name: string;
+        };
+        /** GroupAnalyticsOut */
+        GroupAnalyticsOut: {
+            /** Total Spent */
+            total_spent: string;
+            /** Receipt Count */
+            receipt_count: number;
+            /** Category Breakdown */
+            category_breakdown: components["schemas"]["CategoryBreakdown"][];
+            /** Spending Trend */
+            spending_trend: components["schemas"]["SpendingTrendPoint"][];
+            /** Member History */
+            member_history: components["schemas"]["MemberHistoryPoint"][];
+            /** Top Items */
+            top_items: components["schemas"]["TopItem"][];
+            /** Top Merchants */
+            top_merchants: components["schemas"]["TopMerchant"][];
+            /** Top Receipts */
+            top_receipts: components["schemas"]["TopReceipt"][];
         };
         /** GroupCreate */
         GroupCreate: {
@@ -605,6 +652,15 @@ export interface components {
             /** Username */
             username?: string | null;
         };
+        /** MemberHistoryPoint */
+        MemberHistoryPoint: {
+            /** Period */
+            period: string;
+            /** Paid */
+            paid: string;
+            /** Owed */
+            owed: string;
+        };
         /** MemberSplit */
         MemberSplit: {
             /**
@@ -755,6 +811,13 @@ export interface components {
             /** Amount */
             amount: string;
         };
+        /** SpendingTrendPoint */
+        SpendingTrendPoint: {
+            /** Period */
+            period: string;
+            /** Total */
+            total: string;
+        };
         /** SplitResult */
         SplitResult: {
             /** Shared Total */
@@ -765,6 +828,38 @@ export interface components {
             member_splits: components["schemas"]["MemberSplit"][];
             /** Mismatch */
             mismatch: boolean;
+        };
+        /** TopItem */
+        TopItem: {
+            /** Description */
+            description: string;
+            /** Count */
+            count: number;
+            /** Total */
+            total: string;
+        };
+        /** TopMerchant */
+        TopMerchant: {
+            /** Merchant */
+            merchant: string;
+            /** Count */
+            count: number;
+            /** Total */
+            total: string;
+        };
+        /** TopReceipt */
+        TopReceipt: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Merchant */
+            merchant: string | null;
+            /** Receipt Date */
+            receipt_date: string | null;
+            /** Total Amount */
+            total_amount: string;
         };
         /** ValidationError */
         ValidationError: {
@@ -1845,6 +1940,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SettleUpOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_group_analytics_api_v1_groups__group_id__analytics_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path: {
+                group_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GroupAnalyticsOut"];
                 };
             };
             /** @description Validation Error */
