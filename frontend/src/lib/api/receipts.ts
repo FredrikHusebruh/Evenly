@@ -36,7 +36,7 @@ export async function getReceiptStatus(receiptId: string) {
 
 export async function updateReceipt(
   receiptId: string,
-  patch: { merchant?: string; total_amount?: number; receipt_date?: string; category_id?: string },
+  patch: { merchant?: string; total_amount?: number; receipt_date?: string; category_id?: string; is_done?: boolean },
 ) {
   return unwrap(
     await api.PATCH('/api/v1/receipts/{receipt_id}', { params: { path: { receipt_id: receiptId } }, body: patch }),

@@ -15,7 +15,7 @@ export function GroupDetailPage() {
   const { groupId } = useParams<{ groupId: string }>()
   const { session } = useSession()
   const { group, loading, error, reload } = useGroupDetail(groupId!)
-  const { receipts, loading: receiptsLoading } = useReceipts(groupId!)
+  const { receipts, loading: receiptsLoading, reload: reloadReceipts } = useReceipts(groupId!)
   const [tab, setTab] = useState<Tab>('receipts')
   const navigate = useNavigate()
 
@@ -76,7 +76,12 @@ export function GroupDetailPage() {
 
       <div key={tab} className="animate-fade-in">
         {tab === 'receipts' && (
-          <ReceiptHistoryTable groupId={groupId!} receipts={receipts} loading={receiptsLoading} />
+          <ReceiptHistoryTable
+            groupId={groupId!}
+            receipts={receipts}
+            loading={receiptsLoading}
+            onChange={reloadReceipts}
+          />
         )}
         {tab === 'members' && (
           <MembersTab group={group} isOwner={isOwner} currentUserId={session?.user.id} onChange={reload} />

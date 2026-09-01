@@ -5,8 +5,14 @@ import pytest
 from fastapi import BackgroundTasks
 
 from app.errors import ForbiddenError, NotFoundError
-from app.schemas.receipt import ReceiptCreate
-from app.services.receipts import create_receipt, image_path_belongs_to_group, list_receipts, retry_ocr
+from app.schemas.receipt import ReceiptCreate, ReceiptUpdate
+from app.services.receipts import (
+    create_receipt,
+    image_path_belongs_to_group,
+    list_receipts,
+    retry_ocr,
+    update_receipt,
+)
 
 RECEIPT_ID = UUID("11111111-1111-1111-1111-111111111111")
 GROUP_ID = UUID("22222222-2222-2222-2222-222222222222")
@@ -112,6 +118,7 @@ def _receipt_row(n: int, **overrides):
         "image_path": None,
         "created_at": "2026-01-01T00:00:00Z",
         "ocr_status": "succeeded",
+        "is_done": False,
         "ocr_error": None,
     }
     base.update(overrides)
@@ -165,3 +172,36 @@ async def test_list_receipts_populates_shared_total_from_shared_line_items():
     by_id = {str(r.id): r for r in result}
     assert by_id[_uuid(1)].shared_total == Decimal("15.00")
     assert by_id[_uuid(2)].shared_total == Decimal(0)
+
+
+class _FakeUpdateQueryBuilder:
+    def __init__(self, client):
+        self._client = client
+        self._payload = None
+
+    def update(self, payload):
+        self._payload = payload
+        return self
+
+    def eq(self, *_args, **_kwargs):
+        return self
+
+    async def execute(self):
+        merged = {**self._client.row, **self._payload}
+        return type("R", (), {"data": [merged]})()
+
+
+class _FakeUpdateAsyncClient:
+    def __init__(self, row):
+        self.row = row
+
+    def table(self, _name):
+        return _FakeUpdateQueryBuilder(self)
+
+
+async def test_update_receipt_passes_is_done_through():
+    client = _FakeUpdateAsyncClient(_receipt_row(1))
+
+    result = await update_receipt(client, RECEIPT_ID, ReceiptUpdate(is_done=True))
+
+    assert result.is_done is True

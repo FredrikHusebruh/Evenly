@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router'
-import { ArrowLeft, Plus, Trash2 } from 'lucide-react'
+import { ArrowLeft, Check, Plus, Trash2 } from 'lucide-react'
 import { useReceiptPolling } from '../hooks/useReceiptPolling'
 import { useGroupDetail } from '../hooks/useGroupDetail'
 import { useSplit } from '../hooks/useSplit'
@@ -41,6 +41,17 @@ export function ReceiptReviewPage() {
     } catch {
       showToast('Failed to delete receipt', 'error')
       setDeleting(false)
+    }
+  }
+
+  async function handleToggleDone() {
+    const wasDone = receipt?.is_done ?? false
+    try {
+      await receiptsApi.updateReceipt(receiptId!, { is_done: !wasDone })
+      showToast(wasDone ? 'Marked as not done' : 'Marked as done')
+      await reload()
+    } catch {
+      showToast('Failed to update', 'error')
     }
   }
 
@@ -121,16 +132,30 @@ export function ReceiptReviewPage() {
           <IconButton icon={ArrowLeft} label="Back to group" onClick={() => navigate(`/groups/${groupId}`)} />
           <h1 className="text-xl font-semibold tracking-tight">Review receipt</h1>
         </div>
-        {(receipt.uploaded_by === session?.user.id ||
-          group?.members.find((m) => m.user_id === session?.user.id)?.role === 'owner') && (
-          <IconButton
-            icon={Trash2}
-            label="Delete receipt"
-            variant="danger"
-            onClick={handleDeleteReceipt}
-            disabled={deleting}
-          />
-        )}
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={handleToggleDone}
+            className={`flex items-center gap-1 rounded-md border px-3 py-1.5 text-sm transition-colors ${
+              receipt.is_done
+                ? 'border-accent bg-accent text-white hover:bg-accent-hover'
+                : 'border-border text-muted hover:border-accent'
+            }`}
+          >
+            {receipt.is_done && <Check className="h-4 w-4" strokeWidth={1.75} />}
+            {receipt.is_done ? 'Done' : 'Mark as done'}
+          </button>
+          {(receipt.uploaded_by === session?.user.id ||
+            group?.members.find((m) => m.user_id === session?.user.id)?.role === 'owner') && (
+            <IconButton
+              icon={Trash2}
+              label="Delete receipt"
+              variant="danger"
+              onClick={handleDeleteReceipt}
+              disabled={deleting}
+            />
+          )}
+        </div>
       </div>
 
       {receipt.ocr_status === 'failed' && (

@@ -721,6 +721,8 @@ export interface components {
             ocr_status: "pending" | "processing" | "succeeded" | "failed";
             /** Ocr Error */
             ocr_error: string | null;
+            /** Is Done */
+            is_done: boolean;
             /** Shared Total */
             shared_total?: string | null;
             /** Line Items */
@@ -771,6 +773,8 @@ export interface components {
             ocr_status: "pending" | "processing" | "succeeded" | "failed";
             /** Ocr Error */
             ocr_error: string | null;
+            /** Is Done */
+            is_done: boolean;
             /** Shared Total */
             shared_total?: string | null;
         };
@@ -794,6 +798,8 @@ export interface components {
             receipt_date?: string | null;
             /** Category Id */
             category_id?: string | null;
+            /** Is Done */
+            is_done?: boolean | null;
         };
         /** SettleUpOut */
         SettleUpOut: {
