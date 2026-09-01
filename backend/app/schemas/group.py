@@ -25,6 +25,8 @@ class GroupMemberOut(BaseModel):
     user_id: UUID
     role: Literal["owner", "member"]
     joined_at: datetime
+    email: str | None = None
+    username: str | None = None
 
 
 class GroupDetail(GroupOut):

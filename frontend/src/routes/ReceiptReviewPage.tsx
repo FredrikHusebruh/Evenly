@@ -3,8 +3,10 @@ import { useParams } from 'react-router'
 import { useReceiptPolling } from '../hooks/useReceiptPolling'
 import { useGroupDetail } from '../hooks/useGroupDetail'
 import { useSplit } from '../hooks/useSplit'
+import { useOptimisticLineItems } from '../hooks/useOptimisticLineItems'
 import { useSession } from '../auth/useSession'
 import * as lineItemsApi from '../lib/api/lineItems'
+import type { LineItemPatch } from '../lib/api/lineItems'
 import { ReceiptHeaderFields } from '../components/ReceiptHeaderFields'
 import { LineItemRow } from '../components/LineItemRow'
 import { MismatchBanner } from '../components/MismatchBanner'
@@ -16,7 +18,9 @@ export function ReceiptReviewPage() {
   const { session } = useSession()
   const { receipt, loading, reload } = useReceiptPolling(receiptId!)
   const { group } = useGroupDetail(groupId!)
-  const { split, reload: reloadSplit } = useSplit(receiptId!)
+  const isOcrDone = receipt?.ocr_status === 'succeeded' || receipt?.ocr_status === 'failed'
+  const { split, loading: splitLoading, reload: reloadSplit } = useSplit(receiptId!, isOcrDone)
+  const { items, updateItem, deleteItem, error: itemsError } = useOptimisticLineItems(receipt?.line_items ?? [])
   const [adding, setAdding] = useState(false)
   const [retrying, setRetrying] = useState(false)
 
@@ -29,13 +33,13 @@ export function ReceiptReviewPage() {
     refreshAfterMutation()
   }
 
-  async function handleItemUpdate(itemId: string, patch: Parameters<typeof lineItemsApi.updateLineItem>[1]) {
-    await lineItemsApi.updateLineItem(itemId, patch)
+  async function handleItemUpdate(itemId: string, patch: LineItemPatch) {
+    await updateItem(itemId, patch)
     refreshAfterMutation()
   }
 
   async function handleItemDelete(itemId: string) {
-    await lineItemsApi.deleteLineItem(itemId)
+    await deleteItem(itemId)
     refreshAfterMutation()
   }
 
@@ -97,9 +101,10 @@ export function ReceiptReviewPage() {
       <ReceiptHeaderFields receipt={receipt} onUpdate={handleHeaderUpdate} />
 
       {receipt.mismatch && <MismatchBanner />}
+      {itemsError && <p className="text-sm text-owed">{itemsError}</p>}
 
       <div className="flex flex-col">
-        {receipt.line_items.map((item) => (
+        {items.map((item) => (
           <LineItemRow
             key={item.id}
             item={item}
@@ -119,7 +124,14 @@ export function ReceiptReviewPage() {
         </button>
       </div>
 
-      {split && <SplitSummaryPanel split={split} currentUserId={session?.user.id} />}
+      {split && (
+        <SplitSummaryPanel
+          split={split}
+          members={group?.members ?? []}
+          currentUserId={session?.user.id}
+          loading={splitLoading}
+        />
+      )}
     </div>
   )
 }

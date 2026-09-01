@@ -20,17 +20,16 @@ export async function createLineItem(
   )
 }
 
-export async function updateLineItem(
-  lineItemId: string,
-  patch: Partial<{
-    description: string
-    quantity: number
-    unit_price: number
-    total_price: number
-    status: LineItemStatus
-    assigned_to: string | null
-  }>,
-) {
+export type LineItemPatch = Partial<{
+  description: string
+  quantity: number
+  unit_price: number
+  total_price: number
+  status: LineItemStatus
+  assigned_to: string | null
+}>
+
+export async function updateLineItem(lineItemId: string, patch: LineItemPatch) {
   return unwrap(
     await api.PATCH('/api/v1/line-items/{line_item_id}', {
       params: { path: { line_item_id: lineItemId } },

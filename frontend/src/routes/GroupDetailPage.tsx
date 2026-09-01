@@ -62,8 +62,12 @@ export function GroupDetailPage() {
         ) : (
           <ReceiptHistoryTable groupId={groupId!} receipts={receipts} />
         ))}
-      {tab === 'members' && <MembersTab group={group} isOwner={isOwner} onChange={reload} />}
-      {tab === 'settle' && <SettleUpTab groupId={groupId!} />}
+      {tab === 'members' && (
+        <MembersTab group={group} isOwner={isOwner} currentUserId={session?.user.id} onChange={reload} />
+      )}
+      {tab === 'settle' && (
+        <SettleUpTab groupId={groupId!} members={group.members} currentUserId={session?.user.id} />
+      )}
     </div>
   )
 }

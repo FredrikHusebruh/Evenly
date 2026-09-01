@@ -4,7 +4,7 @@ import type { components } from '../lib/api/schema'
 
 type SplitResult = components['schemas']['SplitResult']
 
-export function useSplit(receiptId: string) {
+export function useSplit(receiptId: string, enabled: boolean) {
   const [split, setSplit] = useState<SplitResult | null>(null)
   const [loading, setLoading] = useState(true)
 
@@ -18,8 +18,9 @@ export function useSplit(receiptId: string) {
   }, [receiptId])
 
   useEffect(() => {
+    if (!enabled) return
     reload()
-  }, [reload])
+  }, [enabled, reload])
 
   return { split, loading, reload }
 }

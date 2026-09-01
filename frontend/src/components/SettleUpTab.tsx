@@ -1,7 +1,19 @@
 import { useSettleUp } from '../hooks/useSettleUp'
 import { Money } from './Money'
+import { displayName, resolveMember } from '../lib/members'
+import type { components } from '../lib/api/schema'
 
-export function SettleUpTab({ groupId }: { groupId: string }) {
+type GroupMember = components['schemas']['GroupMemberOut']
+
+export function SettleUpTab({
+  groupId,
+  members,
+  currentUserId,
+}: {
+  groupId: string
+  members: GroupMember[]
+  currentUserId: string | undefined
+}) {
   const { settleUp, loading, error } = useSettleUp(groupId)
 
   if (loading) return <p className="text-sm text-muted">Loading…</p>
@@ -15,7 +27,8 @@ export function SettleUpTab({ groupId }: { groupId: string }) {
       {settleUp.settlements.map((settlement, i) => (
         <li key={i} className="flex items-center justify-between px-1 py-3 text-sm">
           <span>
-            {settlement.from_user} owes {settlement.to_user}
+            {displayName(resolveMember(members, settlement.from_user), settlement.from_user, currentUserId)} owes{' '}
+            {displayName(resolveMember(members, settlement.to_user), settlement.to_user, currentUserId)}
           </span>
           <Money amount={settlement.amount} variant="owed" />
         </li>

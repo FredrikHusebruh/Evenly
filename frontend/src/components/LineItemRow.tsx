@@ -1,16 +1,10 @@
 import { useState } from 'react'
-import type { LineItemStatus } from '../lib/api/lineItems'
+import type { LineItemPatch, LineItemStatus } from '../lib/api/lineItems'
 import type { components } from '../lib/api/schema'
+import { displayName } from '../lib/members'
 
 type LineItem = components['schemas']['LineItemOut']
 type GroupMember = components['schemas']['GroupMemberOut']
-
-type LineItemPatch = {
-  description?: string
-  total_price?: number
-  status?: LineItemStatus
-  assigned_to?: string | null
-}
 
 const STATUSES: { key: LineItemStatus; label: string }[] = [
   { key: 'shared', label: 'Shared' },
@@ -33,10 +27,6 @@ export function LineItemRow({
 }) {
   const [description, setDescription] = useState(item.description)
   const [totalPrice, setTotalPrice] = useState(item.total_price)
-
-  function memberLabel(userId: string) {
-    return userId === currentUserId ? 'You' : userId.slice(0, 8)
-  }
 
   return (
     <div className="flex flex-col gap-2 border-b border-border py-3 last:border-0">
@@ -87,7 +77,7 @@ export function LineItemRow({
             </option>
             {members.map((member) => (
               <option key={member.user_id} value={member.user_id}>
-                {memberLabel(member.user_id)}
+                {displayName(member, member.user_id, currentUserId)}
               </option>
             ))}
           </select>

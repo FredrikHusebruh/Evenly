@@ -9,6 +9,22 @@ from app.schemas.group import GroupCreate, GroupDetail, GroupMemberOut, GroupOut
 DEFAULT_CATEGORIES = ["Dagligvarer", "Husholdning", "Alkohol", "Snacks", "Annet"]
 
 
+async def _attach_profiles(db: AsyncClient, members: list[dict]) -> list[GroupMemberOut]:
+    user_ids = [m["user_id"] for m in members]
+    if not user_ids:
+        return []
+    profiles_res = await db.table("profiles").select("id, email, username").in_("id", user_ids).execute()
+    by_id = {p["id"]: p for p in profiles_res.data}
+    return [
+        GroupMemberOut(
+            **m,
+            email=by_id.get(m["user_id"], {}).get("email"),
+            username=by_id.get(m["user_id"], {}).get("username"),
+        )
+        for m in members
+    ]
+
+
 async def create_group(db: AsyncClient, user_id: UUID, body: GroupCreate) -> GroupOut:
     group_res = await db.table("groups").insert({"name": body.name, "created_by": str(user_id)}).execute()
     group = group_res.data[0]
@@ -39,13 +55,13 @@ async def get_group(db: AsyncClient, group_id: UUID) -> GroupDetail:
 
     return GroupDetail(
         **group,
-        members=[GroupMemberOut.model_validate(m) for m in members_res.data],
+        members=await _attach_profiles(db, members_res.data),
     )
 
 
 async def list_members(db: AsyncClient, group_id: UUID) -> list[GroupMemberOut]:
     res = await db.table("group_members").select("*").eq("group_id", str(group_id)).execute()
-    return [GroupMemberOut.model_validate(m) for m in res.data]
+    return await _attach_profiles(db, res.data)
 
 
 async def rename_group(db: AsyncClient, group_id: UUID, body: GroupUpdate) -> GroupOut:

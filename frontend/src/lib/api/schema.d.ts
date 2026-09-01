@@ -35,7 +35,8 @@ export interface paths {
         delete?: never;
         options?: never;
         head?: never;
-        patch?: never;
+        /** Update the caller's username */
+        patch: operations["update_me_api_v1_me_patch"];
         trace?: never;
     };
     "/api/v1/groups": {
@@ -438,6 +439,10 @@ export interface components {
              * Format: date-time
              */
             joined_at: string;
+            /** Email */
+            email?: string | null;
+            /** Username */
+            username?: string | null;
         };
         /** GroupOut */
         GroupOut: {
@@ -592,6 +597,13 @@ export interface components {
             id: string;
             /** Email */
             email: string | null;
+            /** Username */
+            username: string | null;
+        };
+        /** MeUpdate */
+        MeUpdate: {
+            /** Username */
+            username?: string | null;
         };
         /** MemberSplit */
         MemberSplit: {
@@ -808,6 +820,41 @@ export interface operations {
             cookie?: never;
         };
         requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MeOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_me_api_v1_me_patch: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MeUpdate"];
+            };
+        };
         responses: {
             /** @description Successful Response */
             200: {

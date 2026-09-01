@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import * as groupsApi from '../lib/api/groups'
 import * as invitesApi from '../lib/api/invites'
+import { displayName } from '../lib/members'
 import type { components } from '../lib/api/schema'
 
 type GroupDetail = components['schemas']['GroupDetail']
@@ -9,10 +10,12 @@ type Invite = components['schemas']['InviteOut']
 export function MembersTab({
   group,
   isOwner,
+  currentUserId,
   onChange,
 }: {
   group: GroupDetail
   isOwner: boolean
+  currentUserId: string | undefined
   onChange: () => void
 }) {
   const [invites, setInvites] = useState<Invite[]>([])
@@ -49,7 +52,8 @@ export function MembersTab({
         {group.members.map((member) => (
           <li key={member.user_id} className="flex items-center justify-between px-1 py-3 text-sm">
             <span>
-              {member.user_id} {member.role === 'owner' && <span className="text-muted">· owner</span>}
+              {displayName(member, member.user_id, currentUserId)}{' '}
+              {member.role === 'owner' && <span className="text-muted">· owner</span>}
             </span>
             {isOwner && member.role !== 'owner' && (
               <button
