@@ -19,6 +19,7 @@ class ReceiptUpdate(BaseModel):
     total_amount: Decimal | None = None
     receipt_date: date | None = None
     category_id: UUID | None = None
+    is_done: bool | None = None
 
 
 class ReceiptOut(BaseModel):
@@ -34,6 +35,7 @@ class ReceiptOut(BaseModel):
     created_at: datetime
     ocr_status: OcrStatus
     ocr_error: str | None
+    is_done: bool
     # Only populated by list_receipts (the receipt history view) — None elsewhere.
     shared_total: Decimal | None = None
 
