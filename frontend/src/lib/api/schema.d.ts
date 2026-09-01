@@ -721,6 +721,8 @@ export interface components {
             ocr_status: "pending" | "processing" | "succeeded" | "failed";
             /** Ocr Error */
             ocr_error: string | null;
+            /** Shared Total */
+            shared_total?: string | null;
             /** Line Items */
             line_items: components["schemas"]["LineItemOut"][];
             /** Items Total */
@@ -769,6 +771,8 @@ export interface components {
             ocr_status: "pending" | "processing" | "succeeded" | "failed";
             /** Ocr Error */
             ocr_error: string | null;
+            /** Shared Total */
+            shared_total?: string | null;
         };
         /** ReceiptStatusOut */
         ReceiptStatusOut: {

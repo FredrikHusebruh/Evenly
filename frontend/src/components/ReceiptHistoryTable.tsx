@@ -1,12 +1,17 @@
 import { useNavigate } from 'react-router'
 import { Receipt as ReceiptIcon } from 'lucide-react'
-import { formatDateNo } from '../lib/format'
+import { formatDateNo, formatNok } from '../lib/format'
 import { Money } from './Money'
 import { Skeleton } from './Skeleton'
 import { EmptyState } from './EmptyState'
 import type { components } from '../lib/api/schema'
 
 type Receipt = components['schemas']['ReceiptOut']
+
+function SharedTotal({ receipt }: { receipt: Receipt }) {
+  if (receipt.shared_total == null) return null
+  return <span className="text-xs text-muted">({formatNok(receipt.shared_total)})</span>
+}
 
 export function ReceiptHistoryTable({
   groupId,
@@ -50,7 +55,14 @@ export function ReceiptHistoryTable({
                 <span className="text-sm">{receipt.merchant ?? '—'}</span>
                 <span className="text-xs text-muted">{formatDateNo(receipt.receipt_date)}</span>
               </span>
-              {receipt.total_amount != null ? <Money amount={receipt.total_amount} /> : <span className="text-muted">—</span>}
+              {receipt.total_amount != null ? (
+                <span className="flex items-baseline gap-1">
+                  <Money amount={receipt.total_amount} />
+                  <SharedTotal receipt={receipt} />
+                </span>
+              ) : (
+                <span className="text-muted">—</span>
+              )}
             </button>
           </li>
         ))}
@@ -74,7 +86,14 @@ export function ReceiptHistoryTable({
               <td className="py-2.5">{receipt.merchant ?? '—'}</td>
               <td className="py-2.5 text-muted">{formatDateNo(receipt.receipt_date)}</td>
               <td className="py-2.5 text-right">
-                {receipt.total_amount != null ? <Money amount={receipt.total_amount} /> : '—'}
+                {receipt.total_amount != null ? (
+                  <span className="inline-flex items-baseline gap-1">
+                    <Money amount={receipt.total_amount} />
+                    <SharedTotal receipt={receipt} />
+                  </span>
+                ) : (
+                  '—'
+                )}
               </td>
             </tr>
           ))}

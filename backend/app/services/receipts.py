@@ -1,4 +1,5 @@
 import logging
+from collections import defaultdict
 from datetime import date
 from decimal import Decimal
 from uuid import UUID
@@ -67,7 +68,24 @@ async def list_receipts(
     if category_id is not None:
         query = query.eq("category_id", str(category_id))
     res = await query.order("receipt_date", desc=True).execute()
-    return [ReceiptOut.model_validate(r) for r in res.data]
+    receipts = res.data
+
+    shared_totals: dict[str, Decimal] = defaultdict(Decimal)
+    receipt_ids = [r["id"] for r in receipts]
+    if receipt_ids:
+        items_res = (
+            await db.table("line_items")
+            .select("receipt_id, total_price")
+            .in_("receipt_id", receipt_ids)
+            .eq("status", "shared")
+            .execute()
+        )
+        for item in items_res.data:
+            shared_totals[item["receipt_id"]] += Decimal(str(item["total_price"]))
+
+    return [
+        ReceiptOut.model_validate({**r, "shared_total": shared_totals.get(r["id"], Decimal(0))}) for r in receipts
+    ]
 
 
 async def get_receipt_detail(db: AsyncClient, receipt_id: UUID) -> ReceiptDetail:

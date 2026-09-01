@@ -34,6 +34,8 @@ class ReceiptOut(BaseModel):
     created_at: datetime
     ocr_status: OcrStatus
     ocr_error: str | None
+    # Only populated by list_receipts (the receipt history view) — None elsewhere.
+    shared_total: Decimal | None = None
 
 
 class ReceiptDetail(ReceiptOut):
