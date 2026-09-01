@@ -3,12 +3,18 @@ import { createRoot } from 'react-dom/client'
 import { RouterProvider } from 'react-router'
 import './index.css'
 import { AuthProvider } from './auth/AuthProvider'
+import { ThemeProvider } from './theme/ThemeProvider'
+import { ToastProvider } from './toast/ToastProvider'
 import { router } from './router'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <AuthProvider>
-      <RouterProvider router={router} />
-    </AuthProvider>
+    <ThemeProvider>
+      <ToastProvider>
+        <AuthProvider>
+          <RouterProvider router={router} />
+        </AuthProvider>
+      </ToastProvider>
+    </ThemeProvider>
   </StrictMode>,
 )

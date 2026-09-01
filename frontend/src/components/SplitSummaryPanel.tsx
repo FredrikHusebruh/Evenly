@@ -16,6 +16,9 @@ export function SplitSummaryPanel({
   currentUserId: string | undefined
   loading?: boolean
 }) {
+  // Pulses the real numbers in place rather than swapping to a Skeleton — this is a
+  // brief in-place recompute after an edit, not a cold load, so the already-correct
+  // figures stay visible instead of flashing to gray placeholder bars for ~150ms.
   return (
     <div className={`mt-2 border-t-4 border-double border-ink pt-3 font-mono text-sm ${loading ? 'animate-pulse' : ''}`}>
       <div className="flex justify-between uppercase tracking-wide text-muted">

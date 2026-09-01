@@ -1,6 +1,9 @@
 import { useState, type FormEvent } from 'react'
 import { useNavigate } from 'react-router'
+import { Users } from 'lucide-react'
 import { useGroups } from '../hooks/useGroups'
+import { Skeleton } from '../components/Skeleton'
+import { EmptyState } from '../components/EmptyState'
 
 export function GroupsPage() {
   const { groups, loading, error, createGroup } = useGroups()
@@ -36,25 +39,35 @@ export function GroupsPage() {
     <div className="flex flex-col gap-12">
       <section>
         <h1 className="mb-6 text-xl font-semibold tracking-tight">Your groups</h1>
-        {loading && <p className="text-sm text-muted">Loading…</p>}
         {error && <p className="text-sm text-owed">{error}</p>}
-        {!loading && groups.length === 0 && <p className="text-sm text-muted">No groups yet — create one below.</p>}
-        <ul className="flex flex-col divide-y divide-border border-y border-border">
-          {groups.map((group) => (
-            <li key={group.id}>
-              <a
-                href={`/groups/${group.id}`}
-                onClick={(e) => {
-                  e.preventDefault()
-                  navigate(`/groups/${group.id}`)
-                }}
-                className="block px-1 py-3 text-base hover:text-accent"
-              >
-                {group.name}
-              </a>
-            </li>
-          ))}
-        </ul>
+        {loading ? (
+          <div className="flex flex-col divide-y divide-border border-y border-border">
+            {[0, 1, 2].map((i) => (
+              <div key={i} className="px-1 py-3">
+                <Skeleton className="h-5 w-40" />
+              </div>
+            ))}
+          </div>
+        ) : groups.length === 0 ? (
+          <EmptyState icon={Users} title="No groups yet — create one below." />
+        ) : (
+          <ul className="flex flex-col divide-y divide-border border-y border-border">
+            {groups.map((group) => (
+              <li key={group.id}>
+                <a
+                  href={`/groups/${group.id}`}
+                  onClick={(e) => {
+                    e.preventDefault()
+                    navigate(`/groups/${group.id}`)
+                  }}
+                  className="block px-1 py-3 text-base hover:text-accent"
+                >
+                  {group.name}
+                </a>
+              </li>
+            ))}
+          </ul>
+        )}
       </section>
 
       <section className="grid gap-8 sm:grid-cols-2">

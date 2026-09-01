@@ -1,7 +1,12 @@
 import { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router'
+import { Copy, Link2 } from 'lucide-react'
 import * as groupsApi from '../lib/api/groups'
 import * as invitesApi from '../lib/api/invites'
 import { displayName } from '../lib/members'
+import { useToast } from '../toast/useToast'
+import { IconButton } from './IconButton'
+import { EmptyState } from './EmptyState'
 import type { components } from '../lib/api/schema'
 
 type GroupDetail = components['schemas']['GroupDetail']
@@ -20,6 +25,9 @@ export function MembersTab({
 }) {
   const [invites, setInvites] = useState<Invite[]>([])
   const [creating, setCreating] = useState(false)
+  const [deleting, setDeleting] = useState(false)
+  const { showToast } = useToast()
+  const navigate = useNavigate()
 
   useEffect(() => {
     if (!isOwner) return
@@ -31,6 +39,9 @@ export function MembersTab({
     try {
       const invite = await invitesApi.createInvite(group.id)
       setInvites((prev) => [invite, ...prev])
+      showToast('Invite created')
+    } catch {
+      showToast('Failed to create invite', 'error')
     } finally {
       setCreating(false)
     }
@@ -44,6 +55,31 @@ export function MembersTab({
   async function handleRemove(userId: string) {
     await groupsApi.removeMember(group.id, userId)
     onChange()
+    showToast('Member removed')
+  }
+
+  async function handleCopy(code: string) {
+    try {
+      await navigator.clipboard.writeText(code)
+      showToast('Invite code copied')
+    } catch {
+      showToast('Failed to copy code', 'error')
+    }
+  }
+
+  async function handleDeleteGroup() {
+    if (!window.confirm(`Delete "${group.name}"? This permanently removes all its receipts and cannot be undone.`)) {
+      return
+    }
+    setDeleting(true)
+    try {
+      await groupsApi.deleteGroup(group.id)
+      showToast('Group deleted')
+      navigate('/groups')
+    } catch {
+      showToast('Failed to delete group', 'error')
+      setDeleting(false)
+    }
   }
 
   return (
@@ -81,17 +117,39 @@ export function MembersTab({
               {creating ? 'Creating…' : 'New invite'}
             </button>
           </div>
-          {invites.length === 0 && <p className="text-sm text-muted">No active invites.</p>}
-          <ul className="flex flex-col divide-y divide-border">
-            {invites.map((invite) => (
-              <li key={invite.id} className="flex items-center justify-between py-2 text-sm">
-                <span className="tabular-nums">{invite.code}</span>
-                <button type="button" onClick={() => handleRevoke(invite.id)} className="text-muted hover:text-owed">
-                  Revoke
-                </button>
-              </li>
-            ))}
-          </ul>
+          {invites.length === 0 ? (
+            <EmptyState icon={Link2} title="No active invites." compact />
+          ) : (
+            <ul className="flex flex-col divide-y divide-border">
+              {invites.map((invite) => (
+                <li key={invite.id} className="flex items-center justify-between py-2 text-sm">
+                  <span className="flex items-center gap-1">
+                    <span className="tabular-nums">{invite.code}</span>
+                    <IconButton icon={Copy} label="Copy invite code" onClick={() => handleCopy(invite.code)} />
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => handleRevoke(invite.id)}
+                    className="text-muted hover:text-owed"
+                  >
+                    Revoke
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+
+          <div className="flex items-center justify-between rounded-md border border-owed/30 bg-owed-tint px-3 py-2.5">
+            <span className="text-sm text-owed">Delete this group and all its receipts.</span>
+            <button
+              type="button"
+              onClick={handleDeleteGroup}
+              disabled={deleting}
+              className="shrink-0 rounded-md border border-owed/40 px-3 py-1.5 text-sm text-owed transition-colors hover:bg-owed/10 disabled:opacity-60"
+            >
+              {deleting ? 'Deleting…' : 'Delete group'}
+            </button>
+          </div>
         </div>
       )}
     </div>
