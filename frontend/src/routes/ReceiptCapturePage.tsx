@@ -1,15 +1,20 @@
 import { useRef } from 'react'
-import { useParams } from 'react-router'
-import { Camera } from 'lucide-react'
+import { useNavigate, useParams } from 'react-router'
+import { ArrowLeft, Camera } from 'lucide-react'
 import { useReceiptUpload } from '../hooks/useReceiptUpload'
+import { IconButton } from '../components/IconButton'
 
 export function ReceiptCapturePage() {
   const { groupId } = useParams<{ groupId: string }>()
   const { upload, uploading, error } = useReceiptUpload(groupId!)
   const inputRef = useRef<HTMLInputElement>(null)
+  const navigate = useNavigate()
 
   return (
     <div className="mx-auto flex max-w-sm flex-col items-center gap-6 py-16 text-center">
+      <div className="flex w-full items-center gap-2">
+        <IconButton icon={ArrowLeft} label="Back to group" onClick={() => navigate(`/groups/${groupId}`)} />
+      </div>
       <h1 className="text-xl font-semibold tracking-tight">Add a receipt</h1>
       <p className="text-sm text-muted">Take a photo or choose an image of the receipt.</p>
 

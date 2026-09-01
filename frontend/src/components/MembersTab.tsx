@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router'
 import { Copy, Link2 } from 'lucide-react'
 import * as groupsApi from '../lib/api/groups'
 import * as invitesApi from '../lib/api/invites'
@@ -24,7 +25,9 @@ export function MembersTab({
 }) {
   const [invites, setInvites] = useState<Invite[]>([])
   const [creating, setCreating] = useState(false)
+  const [deleting, setDeleting] = useState(false)
   const { showToast } = useToast()
+  const navigate = useNavigate()
 
   useEffect(() => {
     if (!isOwner) return
@@ -61,6 +64,21 @@ export function MembersTab({
       showToast('Invite code copied')
     } catch {
       showToast('Failed to copy code', 'error')
+    }
+  }
+
+  async function handleDeleteGroup() {
+    if (!window.confirm(`Delete "${group.name}"? This permanently removes all its receipts and cannot be undone.`)) {
+      return
+    }
+    setDeleting(true)
+    try {
+      await groupsApi.deleteGroup(group.id)
+      showToast('Group deleted')
+      navigate('/groups')
+    } catch {
+      showToast('Failed to delete group', 'error')
+      setDeleting(false)
     }
   }
 
@@ -120,6 +138,18 @@ export function MembersTab({
               ))}
             </ul>
           )}
+
+          <div className="flex items-center justify-between rounded-md border border-owed/30 bg-owed-tint px-3 py-2.5">
+            <span className="text-sm text-owed">Delete this group and all its receipts.</span>
+            <button
+              type="button"
+              onClick={handleDeleteGroup}
+              disabled={deleting}
+              className="shrink-0 rounded-md border border-owed/40 px-3 py-1.5 text-sm text-owed transition-colors hover:bg-owed/10 disabled:opacity-60"
+            >
+              {deleting ? 'Deleting…' : 'Delete group'}
+            </button>
+          </div>
         </div>
       )}
     </div>

@@ -1,6 +1,6 @@
 import { useState } from 'react'
-import { useParams } from 'react-router'
-import { Plus } from 'lucide-react'
+import { useNavigate, useParams } from 'react-router'
+import { ArrowLeft, Plus, Trash2 } from 'lucide-react'
 import { useReceiptPolling } from '../hooks/useReceiptPolling'
 import { useGroupDetail } from '../hooks/useGroupDetail'
 import { useSplit } from '../hooks/useSplit'
@@ -14,12 +14,14 @@ import { LineItemRow } from '../components/LineItemRow'
 import { MismatchBanner } from '../components/MismatchBanner'
 import { SplitSummaryPanel } from '../components/SplitSummaryPanel'
 import { Skeleton } from '../components/Skeleton'
+import { IconButton } from '../components/IconButton'
 import * as receiptsApi from '../lib/api/receipts'
 
 export function ReceiptReviewPage() {
   const { receiptId, groupId } = useParams<{ receiptId: string; groupId: string }>()
   const { session } = useSession()
   const { showToast } = useToast()
+  const navigate = useNavigate()
   const { receipt, loading, reload } = useReceiptPolling(receiptId!)
   const { group } = useGroupDetail(groupId!)
   const isOcrDone = receipt?.ocr_status === 'succeeded' || receipt?.ocr_status === 'failed'
@@ -27,6 +29,20 @@ export function ReceiptReviewPage() {
   const { items, updateItem, deleteItem, error: itemsError } = useOptimisticLineItems(receipt?.line_items ?? [])
   const [adding, setAdding] = useState(false)
   const [retrying, setRetrying] = useState(false)
+  const [deleting, setDeleting] = useState(false)
+
+  async function handleDeleteReceipt() {
+    if (!window.confirm('Delete this receipt? This cannot be undone.')) return
+    setDeleting(true)
+    try {
+      await receiptsApi.deleteReceipt(receiptId!)
+      showToast('Receipt deleted')
+      navigate(`/groups/${groupId}`)
+    } catch {
+      showToast('Failed to delete receipt', 'error')
+      setDeleting(false)
+    }
+  }
 
   async function refreshAfterMutation() {
     await Promise.all([reload(), reloadSplit()])
@@ -80,6 +96,7 @@ export function ReceiptReviewPage() {
   if (loading || !receipt) {
     return (
       <div className="flex flex-col gap-4">
+        <IconButton icon={ArrowLeft} label="Back to group" onClick={() => navigate(`/groups/${groupId}`)} />
         <Skeleton className="h-6 w-40" />
         <Skeleton className="h-32 w-full rounded-md" />
       </div>
@@ -89,6 +106,7 @@ export function ReceiptReviewPage() {
   if (receipt.ocr_status === 'pending' || receipt.ocr_status === 'processing') {
     return (
       <div className="flex flex-col gap-4">
+        <IconButton icon={ArrowLeft} label="Back to group" onClick={() => navigate(`/groups/${groupId}`)} />
         <Skeleton className="h-6 w-40" />
         <Skeleton className="h-32 w-full rounded-md" />
         <p className="text-sm text-muted">Processing receipt…</p>
@@ -98,7 +116,22 @@ export function ReceiptReviewPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <h1 className="text-xl font-semibold tracking-tight">Review receipt</h1>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <IconButton icon={ArrowLeft} label="Back to group" onClick={() => navigate(`/groups/${groupId}`)} />
+          <h1 className="text-xl font-semibold tracking-tight">Review receipt</h1>
+        </div>
+        {(receipt.uploaded_by === session?.user.id ||
+          group?.members.find((m) => m.user_id === session?.user.id)?.role === 'owner') && (
+          <IconButton
+            icon={Trash2}
+            label="Delete receipt"
+            variant="danger"
+            onClick={handleDeleteReceipt}
+            disabled={deleting}
+          />
+        )}
+      </div>
 
       {receipt.ocr_status === 'failed' && (
         <div className="flex items-center gap-3">
