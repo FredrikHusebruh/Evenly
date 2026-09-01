@@ -69,3 +69,19 @@ body {
   color: var(--color-ink);
   font-family: var(--font-sans);
 }
+
+/* Torn-paper edge for the receipt list — the zigzag triangles are cut from
+   the page background color, so they only read correctly against --color-canvas. */
+.receipt-torn-top,
+.receipt-torn-bottom {
+  height: 10px;
+  background-image:
+    linear-gradient(135deg, var(--color-canvas) 50%, transparent 50%),
+    linear-gradient(45deg, var(--color-canvas) 50%, transparent 50%);
+  background-size: 16px 20px;
+  background-position: 0 0, 8px 0;
+  background-repeat: repeat-x;
+}
+.receipt-torn-bottom {
+  transform: scaleY(-1);
+}

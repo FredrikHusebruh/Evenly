@@ -103,35 +103,41 @@ export function ReceiptReviewPage() {
       {receipt.mismatch && <MismatchBanner />}
       {itemsError && <p className="text-sm text-owed">{itemsError}</p>}
 
-      <div className="flex flex-col">
-        {items.map((item) => (
-          <LineItemRow
-            key={item.id}
-            item={item}
-            members={group?.members ?? []}
-            currentUserId={session?.user.id}
-            onUpdate={(patch) => handleItemUpdate(item.id, patch)}
-            onDelete={() => handleItemDelete(item.id)}
-          />
-        ))}
-        <button
-          type="button"
-          onClick={handleAddItem}
-          disabled={adding}
-          className="mt-3 self-start text-sm text-accent hover:text-accent-hover disabled:opacity-60"
-        >
-          + Add item
-        </button>
-      </div>
+      <div className="bg-surface shadow-sm">
+        <div className="receipt-torn-top" />
+        <div className="flex flex-col px-5 py-4">
+          <div className="flex flex-col">
+            {items.map((item) => (
+              <LineItemRow
+                key={item.id}
+                item={item}
+                members={group?.members ?? []}
+                currentUserId={session?.user.id}
+                onUpdate={(patch) => handleItemUpdate(item.id, patch)}
+                onDelete={() => handleItemDelete(item.id)}
+              />
+            ))}
+          </div>
+          <button
+            type="button"
+            onClick={handleAddItem}
+            disabled={adding}
+            className="mt-3 self-start font-mono text-sm text-accent hover:text-accent-hover disabled:opacity-60"
+          >
+            + Add item
+          </button>
 
-      {split && (
-        <SplitSummaryPanel
-          split={split}
-          members={group?.members ?? []}
-          currentUserId={session?.user.id}
-          loading={splitLoading}
-        />
-      )}
+          {split && (
+            <SplitSummaryPanel
+              split={split}
+              members={group?.members ?? []}
+              currentUserId={session?.user.id}
+              loading={splitLoading}
+            />
+          )}
+        </div>
+        <div className="receipt-torn-bottom" />
+      </div>
     </div>
   )
 }

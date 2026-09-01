@@ -31,6 +31,11 @@ class NotFoundError(AppError):
     public_message = "Not found."
 
 
+class ValidationError(AppError):
+    status_code = 400
+    public_message = "Invalid request."
+
+
 async def app_error_handler(request: Request, exc: AppError) -> JSONResponse:
     if exc.status_code >= 500:
         logger.exception("Unhandled AppError on %s %s", request.method, request.url.path, exc_info=exc)
